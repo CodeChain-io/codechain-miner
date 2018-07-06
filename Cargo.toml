@@ -5,3 +5,4 @@ license = "AGPL-3.0"
 authors = ["CodeChain Team <codechain@kodebox.io>"]
 
 [dependencies]
+hyper = "0.12"
