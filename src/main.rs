@@ -1,13 +1,28 @@
+extern crate futures;
 extern crate hyper;
 
-use hyper::{Body, Request, Response, Server};
-use hyper::rt::Future;
+use futures::future;
+use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use hyper::rt::{Future, Stream};
 use hyper::service::service_fn;
 
 type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
-fn get_work(_req: Request<Body>) -> BoxFut {
-    unimplemented!()
+fn get_work(req: Request<Body>) -> BoxFut {
+    let mut response = Response::new(Body::empty());
+    match (req.method(), req.uri().path()) {
+        (&Method::POST, "/") => {
+            Box::new(req.into_body().concat2().map(|_| {
+                // FIXME: Spawn worker with received work
+                *response.status_mut() = StatusCode::OK;
+                response
+            }))
+        }
+        _ => {
+            *response.status_mut() = StatusCode::NOT_FOUND;
+            Box::new(future::ok(response))
+        }
+    }
 }
 
 fn main() {
