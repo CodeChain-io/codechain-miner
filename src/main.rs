@@ -1,5 +1,8 @@
+extern crate env_logger;
 extern crate futures;
 extern crate hyper;
+#[macro_use]
+extern crate log;
 
 use futures::future;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
@@ -26,13 +29,14 @@ fn get_work(req: Request<Body>) -> BoxFut {
 }
 
 fn main() {
+    env_logger::init();
     // FIXME: Get notification address from command line option
     const RECEIVE_PORT: u16 = 3333;
     let addr = ([127, 0, 0, 1], RECEIVE_PORT).into();
 
     let server = Server::bind(&addr)
         .serve(|| service_fn(get_work))
-        .map_err(|e| eprintln!("server error: {}", e));
+        .map_err(|e| error!("server error: {}", e));
 
     hyper::rt::run(server);
 }

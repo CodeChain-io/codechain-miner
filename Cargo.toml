@@ -5,5 +5,7 @@ license = "AGPL-3.0"
 authors = ["CodeChain Team <codechain@kodebox.io>"]
 
 [dependencies]
+env_logger = "0.5.10"
 futures = "0.1.21"
 hyper = "0.12"
+log = "0.4.3"
