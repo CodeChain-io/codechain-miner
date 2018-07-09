@@ -1,8 +1,10 @@
+mod blake;
 mod cuckoo;
 mod work;
 
 use ethereum_types::U256;
 
+pub use self::blake::BlakeWorker;
 pub use self::cuckoo::CuckooWorker;
 pub use self::work::{work, spawn_worker, submit};
 

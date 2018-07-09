@@ -26,13 +26,14 @@ use hyper::rt::{Future, Stream};
 use hyper::service::service_fn;
 
 use self::message::Job;
-use self::worker::{CuckooWorker, spawn_worker};
+use self::worker::{BlakeWorker, CuckooWorker, spawn_worker, Worker};
 
 type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
 fn get_work(req: Request<Body>, algorithm: &str) -> BoxFut {
-    let worker = match algorithm {
-        "cuckoo" => CuckooWorker::new(),
+    let worker: Box<Worker> = match algorithm {
+        "blake" => Box::new(BlakeWorker::new()) as Box<Worker>,
+        "cuckoo" => Box::new(CuckooWorker::new()) as Box<Worker>,
         _ => unreachable!(),
     };
     let mut response = Response::new(Body::empty());
@@ -44,7 +45,7 @@ fn get_work(req: Request<Body>, algorithm: &str) -> BoxFut {
                         // FIXME: don't unwrap while parsing incoming job
                         let hash = H256::from_str(clean_0x(&rpc.result.0)).unwrap();
                         let target = U256::from_str(clean_0x(&rpc.result.1)).unwrap();
-                        spawn_worker(hash, target, Box::new(worker));
+                        spawn_worker(hash, target, worker);
                         *response.status_mut() = StatusCode::OK;
                     }
                     Err(_) => {
@@ -68,7 +69,7 @@ fn main() {
     let addr = ([127, 0, 0, 1], RECEIVE_PORT).into();
 
     // FIXME: Get algorithm type from command line option
-    let algorithm = String::from("cuckoo");
+    let algorithm = String::from("blake");
 
     let server = Server::bind(&addr)
         .serve(move || {
