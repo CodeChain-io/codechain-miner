@@ -6,11 +6,14 @@ authors = ["CodeChain Team <codechain@kodebox.io>"]
 
 [dependencies]
 byteorder = "1.2"
+cuckoo = { git = "https://github.com/CodeChain-io/rust-cuckoo.git", rev = "280cab9c" }
 ethereum-types = "0.3.2"
 env_logger = "0.5.10"
 futures = "0.1.21"
 hyper = "0.12"
 log = "0.4.3"
+rlp = "0.2.2"
+rust-crypto = "0.2.36"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"

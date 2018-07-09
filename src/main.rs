@@ -1,10 +1,13 @@
 extern crate byteorder;
+extern crate crypto;
+extern crate cuckoo;
 extern crate ethereum_types;
 extern crate env_logger;
 extern crate futures;
 extern crate hyper;
 #[macro_use]
 extern crate log;
+extern crate rlp;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
