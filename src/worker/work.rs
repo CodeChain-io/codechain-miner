@@ -14,8 +14,8 @@ const SUBMIT_PORT: u16 = 8080;
 
 pub fn spawn_worker(hash: H256, target: U256, worker: Box<Worker>) {
     spawn(move || {
-        JOB_ID.fetch_add(1, Ordering::SeqCst);
-        if let Some(solution) = work(JOB_ID.load(Ordering::SeqCst), &hash, &target, worker) {
+        let id = JOB_ID.fetch_add(1, Ordering::SeqCst);
+        if let Some(solution) = work(id, &hash, &target, worker) {
             submit(hash, solution);
         }
     });
