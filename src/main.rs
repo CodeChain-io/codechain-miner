@@ -1,3 +1,4 @@
+extern crate byteorder;
 extern crate ethereum_types;
 extern crate env_logger;
 extern crate futures;
@@ -21,7 +22,7 @@ use hyper::rt::{Future, Stream};
 use hyper::service::service_fn;
 
 use self::message::Job;
-use self::worker::CuckooWorker;
+use self::worker::{CuckooWorker, spawn_worker};
 
 type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
@@ -39,6 +40,7 @@ fn get_work(req: Request<Body>, algorithm: &str) -> BoxFut {
                         // FIXME: don't unwrap while parsing incoming job
                         let hash = H256::from_str(clean_0x(&rpc.result.0)).unwrap();
                         let target = U256::from_str(clean_0x(&rpc.result.1)).unwrap();
+                        spawn_worker(hash, target, Box::new(worker));
                         *response.status_mut() = StatusCode::OK;
                     }
                     Err(_) => {
