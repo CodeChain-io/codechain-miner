@@ -4,15 +4,24 @@ extern crate futures;
 extern crate hyper;
 #[macro_use]
 extern crate log;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 
+mod message;
 mod worker;
 
+use std::str::FromStr;
+
+use ethereum_types::{clean_0x, H256, U256};
 use futures::future;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use hyper::rt::{Future, Stream};
 use hyper::service::service_fn;
 
-use self::worker::{CuckooWorker, Worker};
+use self::message::Job;
+use self::worker::CuckooWorker;
 
 type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
@@ -24,9 +33,18 @@ fn get_work(req: Request<Body>, algorithm: &str) -> BoxFut {
     let mut response = Response::new(Body::empty());
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => {
-            Box::new(req.into_body().concat2().map(|_| {
-                // FIXME: Spawn worker with received work
-                *response.status_mut() = StatusCode::OK;
+            Box::new(req.into_body().concat2().map(|chunk| {
+                match serde_json::from_slice::<Job>(&chunk.into_bytes()) {
+                    Ok(rpc) => {
+                        // FIXME: don't unwrap while parsing incoming job
+                        let hash = H256::from_str(clean_0x(&rpc.result.0)).unwrap();
+                        let target = U256::from_str(clean_0x(&rpc.result.1)).unwrap();
+                        *response.status_mut() = StatusCode::OK;
+                    }
+                    Err(_) => {
+                        *response.status_mut() = StatusCode::BAD_REQUEST;
+                    }
+                }
                 response
             }))
         }
