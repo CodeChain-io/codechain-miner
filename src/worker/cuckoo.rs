@@ -16,6 +16,13 @@ pub fn blake256<T: AsRef<[u8]>>(s: T) -> H256 {
     result
 }
 
+#[derive(Clone)]
+pub struct CuckooConfig {
+    pub max_vertex: usize,
+    pub max_edge: usize,
+    pub cycle_length: usize,
+}
+
 pub struct CuckooWorker {
     message: Vec<u8>,
     nonce: u64,
@@ -25,14 +32,13 @@ pub struct CuckooWorker {
 }
 
 impl CuckooWorker {
-    pub fn new() -> Self {
+    pub fn new(config: &CuckooConfig) -> Self {
         Self {
             message: Vec::new(),
             nonce: 0,
             target: U256::zero(),
             is_executed: false,
-            // FIXME: get parameters from command line option
-            solver: Cuckoo::new(16, 8, 4),
+            solver: Cuckoo::new(config.max_vertex, config.max_edge, config.cycle_length),
         }
     }
 }

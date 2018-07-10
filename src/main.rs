@@ -1,4 +1,5 @@
 extern crate byteorder;
+extern crate clap;
 extern crate crypto;
 extern crate cuckoo;
 extern crate ethereum_types;
@@ -19,6 +20,7 @@ mod worker;
 
 use std::str::FromStr;
 
+use clap::{Arg, App, AppSettings, SubCommand};
 use ethereum_types::{clean_0x, H256, U256};
 use futures::future;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
@@ -26,26 +28,25 @@ use hyper::rt::{Future, Stream};
 use hyper::service::service_fn;
 
 use self::message::Job;
-use self::worker::{BlakeWorker, CuckooWorker, spawn_worker, Worker};
+use self::worker::{BlakeWorker, CuckooConfig, CuckooWorker, spawn_worker, Worker, WorkerConfig};
 
 type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
-fn get_work(req: Request<Body>, algorithm: &str) -> BoxFut {
-    let worker: Box<Worker> = match algorithm {
-        "blake" => Box::new(BlakeWorker::new()) as Box<Worker>,
-        "cuckoo" => Box::new(CuckooWorker::new()) as Box<Worker>,
-        _ => unreachable!(),
+fn get_work(req: Request<Body>, config: &WorkerConfig, submit_port: u16) -> BoxFut {
+    let worker: Box<Worker> = match config {
+        WorkerConfig::Blake => Box::new(BlakeWorker::new()) as Box<Worker>,
+        WorkerConfig::Cuckoo(config) => Box::new(CuckooWorker::new(config)) as Box<Worker>,
     };
     let mut response = Response::new(Body::empty());
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => {
-            Box::new(req.into_body().concat2().map(|chunk| {
+            Box::new(req.into_body().concat2().map(move |chunk| {
                 match serde_json::from_slice::<Job>(&chunk.into_bytes()) {
                     Ok(rpc) => {
                         // FIXME: don't unwrap while parsing incoming job
                         let hash = H256::from_str(clean_0x(&rpc.result.0)).unwrap();
                         let target = U256::from_str(clean_0x(&rpc.result.1)).unwrap();
-                        spawn_worker(hash, target, worker);
+                        spawn_worker(hash, target, worker, submit_port);
                         *response.status_mut() = StatusCode::OK;
                     }
                     Err(_) => {
@@ -62,21 +63,81 @@ fn get_work(req: Request<Body>, algorithm: &str) -> BoxFut {
     }
 }
 
-fn main() {
-    env_logger::init();
-    // FIXME: Get notification address from command line option
-    const RECEIVE_PORT: u16 = 3333;
-    let addr = ([127, 0, 0, 1], RECEIVE_PORT).into();
+// returns (listen_port, submit_port, worker_config)
+fn get_options() -> Result<(u16, u16, WorkerConfig), String> {
+    let matches = App::new("codechain-miner")
+        .setting(AppSettings::SubcommandRequired)
+        .subcommands(vec![
+            SubCommand::with_name("cuckoo")
+                .args(&[
+                    Arg::with_name("max vertex")
+                        .short("n")
+                        .takes_value(true)
+                        .required(true),
+                    Arg::with_name("max edge")
+                        .short("m")
+                        .takes_value(true)
+                        .required(true),
+                    Arg::with_name("cycle length")
+                        .short("l")
+                        .takes_value(true)
+                        .required(true)
+                ]),
+            SubCommand::with_name("blake"),
+        ])
+        .args(&[
+            Arg::with_name("listening port")
+                .short("p")
+                .global(true)
+                .takes_value(true)
+                .default_value("3333"),
+            Arg::with_name("submitting port")
+                .short("s")
+                .global(true)
+                .takes_value(true)
+                .default_value("8080"),
+        ])
+        .get_matches();
 
-    // FIXME: Get algorithm type from command line option
-    let algorithm = String::from("blake");
+    let listen_port: u16 = matches.value_of("listening port").unwrap()
+        .parse().map_err(|_| "Invalid listening port")?;
+    let submit_port: u16 = matches.value_of("submitting port").unwrap()
+        .parse().map_err(|_| "Invalid submitting port")?;
+
+    let worker_config = match matches.subcommand() {
+        ("cuckoo", Some(submatch)) => {
+            let max_vertex = submatch.value_of("max vertex").unwrap()
+                .parse().map_err(|_| "Invalid max vertex")?;
+            let max_edge = submatch.value_of("max edge").unwrap()
+                .parse().map_err(|_| "Invalid max edge")?;
+            let cycle_length = submatch.value_of("cycle length").unwrap()
+                .parse().map_err(|_| "Invalid cycle length")?;
+            WorkerConfig::Cuckoo(CuckooConfig {
+                max_vertex,
+                max_edge,
+                cycle_length,
+            })
+        },
+        ("blake", _) => WorkerConfig::Blake,
+        _ => return Err("Invalid subcommand".into()),
+    };
+
+    Ok((listen_port, submit_port, worker_config))
+}
+
+fn main() -> Result<(), String> {
+    env_logger::init();
+    let (listen_port, submit_port, worker_config) = get_options()?;
+    let addr = ([127, 0, 0, 1], listen_port).into();
 
     let server = Server::bind(&addr)
         .serve(move || {
-            let a = algorithm.clone();
-            service_fn(move |req| get_work(req, &a))
+            let config = worker_config.clone();
+            service_fn(move |req| get_work(req, &config, submit_port))
         })
         .map_err(|e| error!("server error: {}", e));
 
     hyper::rt::run(server);
+
+    Ok(())
 }
