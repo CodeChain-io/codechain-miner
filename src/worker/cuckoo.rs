@@ -45,6 +45,8 @@ impl Worker for CuckooWorker {
 
         self.nonce = nonce;
         self.target = *target;
+
+        self.is_executed = false;
     }
 
     fn proceed(&mut self) -> Option<Vec<Vec<u8>>> {

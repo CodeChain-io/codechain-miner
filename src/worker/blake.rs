@@ -41,6 +41,8 @@ impl Worker for BlakeWorker {
 
         self.nonce = nonce;
         self.target = *target;
+
+        self.is_executed = false;
     }
 
     fn proceed(&mut self) -> Option<Vec<Vec<u8>>> {
@@ -48,6 +50,7 @@ impl Worker for BlakeWorker {
             return None
         }
 
+        self.is_executed = true;
         let hash = blake256(&self.message);
         if U256::from(hash) <= self.target {
             let nonce_bytes = rlp::encode(&self.nonce).to_vec();
