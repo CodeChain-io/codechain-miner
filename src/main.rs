@@ -18,8 +18,8 @@ extern crate byteorder;
 extern crate clap;
 extern crate crypto;
 extern crate cuckoo;
-extern crate ethereum_types;
 extern crate env_logger;
+extern crate ethereum_types;
 extern crate futures;
 extern crate hyper;
 #[macro_use]
@@ -36,15 +36,15 @@ mod worker;
 
 use std::str::FromStr;
 
-use clap::{Arg, App, AppSettings, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand};
 use ethereum_types::{clean_0x, H256, U256};
 use futures::future;
-use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use hyper::rt::{Future, Stream};
 use hyper::service::service_fn;
+use hyper::{Body, Method, Request, Response, Server, StatusCode};
 
 use self::message::Job;
-use self::worker::{BlakeWorker, CuckooConfig, CuckooWorker, spawn_worker, Worker, WorkerConfig};
+use self::worker::{spawn_worker, BlakeWorker, CuckooConfig, CuckooWorker, Worker, WorkerConfig};
 
 type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
@@ -84,56 +84,33 @@ fn get_options() -> Result<(u16, u16, WorkerConfig), String> {
     let matches = App::new("codechain-miner")
         .setting(AppSettings::SubcommandRequired)
         .subcommands(vec![
-            SubCommand::with_name("cuckoo")
-                .args(&[
-                    Arg::with_name("max vertex")
-                        .short("n")
-                        .takes_value(true)
-                        .required(true),
-                    Arg::with_name("max edge")
-                        .short("m")
-                        .takes_value(true)
-                        .required(true),
-                    Arg::with_name("cycle length")
-                        .short("l")
-                        .takes_value(true)
-                        .required(true)
-                ]),
+            SubCommand::with_name("cuckoo").args(&[
+                Arg::with_name("max vertex").short("n").takes_value(true).required(true),
+                Arg::with_name("max edge").short("m").takes_value(true).required(true),
+                Arg::with_name("cycle length").short("l").takes_value(true).required(true),
+            ]),
             SubCommand::with_name("blake"),
         ])
         .args(&[
-            Arg::with_name("listening port")
-                .short("p")
-                .global(true)
-                .takes_value(true)
-                .default_value("3333"),
-            Arg::with_name("submitting port")
-                .short("s")
-                .global(true)
-                .takes_value(true)
-                .default_value("8080"),
+            Arg::with_name("listening port").short("p").global(true).takes_value(true).default_value("3333"),
+            Arg::with_name("submitting port").short("s").global(true).takes_value(true).default_value("8080"),
         ])
         .get_matches();
 
-    let listen_port: u16 = matches.value_of("listening port").unwrap()
-        .parse().map_err(|_| "Invalid listening port")?;
-    let submit_port: u16 = matches.value_of("submitting port").unwrap()
-        .parse().map_err(|_| "Invalid submitting port")?;
+    let listen_port: u16 = matches.value_of("listening port").unwrap().parse().map_err(|_| "Invalid listening port")?;
+    let submit_port: u16 = matches.value_of("submitting port").unwrap().parse().map_err(|_| "Invalid submitting port")?;
 
     let worker_config = match matches.subcommand() {
         ("cuckoo", Some(submatch)) => {
-            let max_vertex = submatch.value_of("max vertex").unwrap()
-                .parse().map_err(|_| "Invalid max vertex")?;
-            let max_edge = submatch.value_of("max edge").unwrap()
-                .parse().map_err(|_| "Invalid max edge")?;
-            let cycle_length = submatch.value_of("cycle length").unwrap()
-                .parse().map_err(|_| "Invalid cycle length")?;
+            let max_vertex = submatch.value_of("max vertex").unwrap().parse().map_err(|_| "Invalid max vertex")?;
+            let max_edge = submatch.value_of("max edge").unwrap().parse().map_err(|_| "Invalid max edge")?;
+            let cycle_length = submatch.value_of("cycle length").unwrap().parse().map_err(|_| "Invalid cycle length")?;
             WorkerConfig::Cuckoo(CuckooConfig {
                 max_vertex,
                 max_edge,
                 cycle_length,
             })
-        },
+        }
         ("blake", _) => WorkerConfig::Blake,
         _ => return Err("Invalid subcommand".into()),
     };
