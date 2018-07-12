@@ -1,4 +1,4 @@
-# CodeChain Miner
+# CodeChain Miner [![Build Status](https://travis-ci.org/CodeChain-io/codechain-miner.svg?branch=master)](https://travis-ci.org/CodeChain-io/codechain-miner)
 
 Mining worker for PoW algorithms in [CodeChain](https://github.com/CodeChain-io/codechain).
 
