@@ -60,7 +60,7 @@ impl CuckooWorker {
 }
 
 impl Worker for CuckooWorker {
-    fn init(&mut self,  message: &[u8], nonce: u64, target: &U256) {
+    fn init(&mut self, message: &[u8], nonce: u64, target: &U256) {
         self.message = message.to_vec();
         // FIXME: check message length
         LittleEndian::write_u64(&mut self.message, nonce);

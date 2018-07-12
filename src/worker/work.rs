@@ -18,9 +18,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread::spawn;
 
 use ethereum_types::{H256, U256};
-use hyper::{Body, Client, Method, Request};
 use hyper::header::HeaderValue;
 use hyper::rt::{self, Future};
+use hyper::{Body, Client, Method, Request};
 
 use super::Worker;
 
@@ -45,7 +45,7 @@ pub fn work(id: usize, hash: &H256, target: &U256, mut worker: Box<Worker>) -> O
             }
             match worker.proceed() {
                 Some(solution) => return Some(solution),
-                None => {},
+                None => {}
             }
         }
     }
@@ -53,9 +53,10 @@ pub fn work(id: usize, hash: &H256, target: &U256, mut worker: Box<Worker>) -> O
 }
 
 pub fn submit(hash: H256, solution: Vec<Vec<u8>>, port: u16) {
-    let seal: Vec<_> = solution.iter().map(|bytes| {
-        bytes.iter().fold(String::from("0x"), |acc, x| format!("{}{:02x}", acc, x))
-    }).collect();
+    let seal: Vec<_> = solution
+        .iter()
+        .map(|bytes| bytes.iter().fold(String::from("0x"), |acc, x| format!("{}{:02x}", acc, x)))
+        .collect();
 
     let json = json!({
         "jsonrpc": "2.0",
@@ -71,5 +72,7 @@ pub fn submit(hash: H256, solution: Vec<Vec<u8>>, port: u16) {
     *req.uri_mut() = format!("http://127.0.0.1:{}", port).parse().unwrap();
     req.headers_mut().insert("content-type", HeaderValue::from_str("application/json").unwrap());
 
-    rt::run(Client::new().request(req).map(|_| {}).map_err(|err| { eprintln!("Error {}", err); }));
+    rt::run(Client::new().request(req).map(|_| {}).map_err(|err| {
+        eprintln!("Error {}", err);
+    }));
 }
