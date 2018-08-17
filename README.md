@@ -25,9 +25,9 @@ codechain-miner ALGORITHM [OPTIONS]
 - `cuckoo` : [Cuckoo Cycle](https://github.com/tromp/cuckoo)
 
 ### Usage Examples
-* **Blake** mining, listening to port **3334**, submitting to port **8081** :
+* **Blake** mining, listening to port **3333**, submitting to port **8080** :
 ```
-codechain-miner blake -p 3334 -s 8081
+codechain-miner blake -p 3333 -s 8080
 ```
 * **Cuckoo Cycle** mining, N=16, M=8, L=6 :
 ```
