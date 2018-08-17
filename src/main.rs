@@ -49,11 +49,15 @@ use self::worker::{spawn_worker, BlakeWorker, CuckooConfig, CuckooWorker, Worker
 
 type BoxFut = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
-fn get_work(req: Request<Body>, config: &WorkerConfig, submit_port: u16) -> BoxFut {
-    let worker: Box<Worker> = match config {
+fn new_worker(config: &WorkerConfig) -> Box<Worker> {
+    match config {
         WorkerConfig::Blake => Box::new(BlakeWorker::new()) as Box<Worker>,
         WorkerConfig::Cuckoo(config) => Box::new(CuckooWorker::new(config)) as Box<Worker>,
-    };
+    }
+}
+
+fn get_work(req: Request<Body>, config: &WorkerConfig, submit_port: u16) -> BoxFut {
+    let worker = new_worker(config);
     let mut response = Response::new(Body::empty());
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => {
