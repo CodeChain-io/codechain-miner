@@ -4,18 +4,18 @@ Mining worker for PoW algorithms in [CodeChain](https://github.com/CodeChain-io/
 
 ## Build
 
-CodeChain miner is written in rust. We recommend setting up build environment with [rustup](https://rustup.rs/).
+CodeChain miner is written in Rust. We recommend setting up a build environment with [rustup](https://rustup.rs/).
 
-To build executable in release mode, run following command.
+To build an executable in release mode, run the following command.
 ```
 cargo build --release
 ```
 
-Resulting binary file can be found at `target/release/codechain-miner`.
+The resulting binary file can be found at `target/release/codechain-miner`.
 
 ## Usage
 
-CodeChain miner can switch between multiple mining algorithms with command line option. To run miner with specific algorithm, run:
+CodeChain miner can switch between multiple mining algorithms with command line option. To run miner with a specific algorithm, run:
 ```
 codechain-miner ALGORITHM [OPTIONS]
 ```
