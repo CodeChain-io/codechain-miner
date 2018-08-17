@@ -134,6 +134,8 @@ fn main() -> Result<(), String> {
             service_fn(move |req| get_work(req, &config, submit_port))
         })
         .map_err(|e| error!("server error: {}", e));
+    info!("Server started, listening on {:?}", addr);
+    info!("It will submit to 127.0.0.1:{}", submit_port);
 
     hyper::rt::run(server);
 
