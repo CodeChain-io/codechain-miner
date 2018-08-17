@@ -45,11 +45,15 @@ pub fn work(id: usize, hash: &H256, target: &U256, mut worker: Box<Worker>) -> O
                 return None
             }
             match worker.proceed() {
-                Some(solution) => return Some(solution),
+                Some(solution) => {
+                    info!("Nonce: {}", nonce);
+                    return Some(solution)
+                }
                 None => {}
             }
         }
     }
+    info!("Could not find the solution for hash {}", hash);
     None
 }
 
@@ -70,6 +74,7 @@ pub fn submit(hash: H256, solution: Vec<Vec<u8>>, port: u16) {
     *req.uri_mut() = format!("http://127.0.0.1:{}", port).parse().unwrap();
     req.headers_mut().insert("content-type", HeaderValue::from_str("application/json").unwrap());
 
+    info!("Job finished with hash {}, seal {:?}", hash, seal);
     rt::run(Client::new().request(req).map(|_| {}).map_err(|err| {
         eprintln!("Error {}", err);
     }));

@@ -78,13 +78,15 @@ impl Worker for CuckooWorker {
         self.is_executed = true;
         if let Some(proof) = self.solver.solve(&self.message) {
             let hash = blake256(rlp::encode_list(&proof));
-            if U256::from(hash) <= self.target {
-                info!("Solution found: {:?}", proof);
+            let current_score = U256::from(hash);
+            if current_score <= self.target {
+                info!("Solution found.\n  nonce: {}\n  proof: {:?}", self.nonce, proof);
                 let nonce_bytes = ::rlp::encode(&self.nonce).to_vec();
                 let proof_bytes = ::rlp::encode_list(&proof).to_vec();
 
                 return Some(vec![nonce_bytes, proof_bytes])
             }
+            trace!("Retry.\n score : {:#0128x}\n target: {:#0128x}", current_score, self.target);
         }
         None
     }

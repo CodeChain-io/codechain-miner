@@ -68,11 +68,14 @@ impl Worker for BlakeWorker {
 
         self.is_executed = true;
         let hash = blake256(&self.message);
-        if U256::from(hash) <= self.target {
+        let current_score = U256::from(hash);
+        if current_score <= self.target {
+            info!("Solution found.\n  nonce: {}", self.nonce);
             let nonce_bytes = rlp::encode(&self.nonce).to_vec();
 
             return Some(vec![nonce_bytes])
         }
+        trace!("Retry.\n score : {:#0128x}\n target: {:#0128x}", current_score, self.target);
         None
     }
 
