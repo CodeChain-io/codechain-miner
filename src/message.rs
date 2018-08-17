@@ -16,5 +16,6 @@
 
 #[derive(Deserialize)]
 pub struct Job {
+    /// (hash, target).
     pub result: (String, String),
 }
