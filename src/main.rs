@@ -25,6 +25,7 @@ extern crate hyper;
 #[macro_use]
 extern crate log;
 extern crate rlp;
+extern crate rustc_hex;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;

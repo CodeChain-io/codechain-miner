@@ -21,6 +21,7 @@ use ethereum_types::{H256, U256};
 use hyper::header::HeaderValue;
 use hyper::rt::{self, Future};
 use hyper::{Body, Client, Method, Request};
+use rustc_hex::ToHex;
 
 use super::Worker;
 
@@ -55,7 +56,7 @@ pub fn work(id: usize, hash: &H256, target: &U256, mut worker: Box<Worker>) -> O
 pub fn submit(hash: H256, solution: Vec<Vec<u8>>, port: u16) {
     let seal: Vec<_> = solution
         .iter()
-        .map(|bytes| bytes.iter().fold(String::from("0x"), |acc, x| format!("{}{:02x}", acc, x)))
+        .map(|bytes| format!("0x{}", bytes.to_hex()))
         .collect();
 
     let json = json!({
