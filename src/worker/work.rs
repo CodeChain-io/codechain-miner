@@ -54,10 +54,7 @@ pub fn work(id: usize, hash: &H256, target: &U256, mut worker: Box<Worker>) -> O
 }
 
 pub fn submit(hash: H256, solution: Vec<Vec<u8>>, port: u16) {
-    let seal: Vec<_> = solution
-        .iter()
-        .map(|bytes| format!("0x{}", bytes.to_hex()))
-        .collect();
+    let seal: Vec<_> = solution.iter().map(|bytes| format!("0x{}", bytes.to_hex())).collect();
 
     let json = json!({
         "jsonrpc": "2.0",
