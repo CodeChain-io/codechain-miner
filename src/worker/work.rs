@@ -18,8 +18,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread::spawn;
 
 use ethereum_types::{H256, U256};
+use futures::Future;
 use hyper::header::HeaderValue;
-use hyper::rt::{self, Future};
+use hyper::rt::run;
 use hyper::{Body, Client, Method, Request};
 use rustc_hex::ToHex;
 
@@ -75,7 +76,7 @@ pub fn submit(hash: H256, solution: Vec<Vec<u8>>, port: u16) {
     req.headers_mut().insert("content-type", HeaderValue::from_str("application/json").unwrap());
 
     info!("Job finished with hash {}, seal {:?}", hash, seal);
-    rt::run(Client::new().request(req).map(|_| {}).map_err(|err| {
+    run(Client::new().request(req).map(|_| {}).map_err(|err| {
         eprintln!("Error {}", err);
     }));
 }
