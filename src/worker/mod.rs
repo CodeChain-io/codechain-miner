@@ -16,9 +16,7 @@
 
 mod work;
 
-use std::str::FromStr;
-
-use ethereum_types::{clean_0x, H256, U256};
+use ethereum_types::{clean_0x, U256};
 use futures::future;
 use hyper::rt::{Future, Stream};
 use hyper::service::service_fn;
@@ -56,8 +54,8 @@ fn get_work<C: Config>(config: C, req: Request<Body>) -> BoxFut {
                 match serde_json::from_slice::<Job>(&chunk.into_bytes()) {
                     Ok(rpc) => {
                         // FIXME: don't unwrap while parsing incoming job
-                        let hash = H256::from_str(clean_0x(&rpc.result.0)).unwrap();
-                        let target = U256::from_str(clean_0x(&rpc.result.1)).unwrap();
+                        let hash = clean_0x(&rpc.result.0).parse().unwrap();
+                        let target = clean_0x(&rpc.result.1).parse().unwrap();
                         spawn_worker(hash, target, worker, submit_port);
                         *response.status_mut() = StatusCode::OK;
                     }
