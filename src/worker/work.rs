@@ -26,11 +26,12 @@ use rustc_hex::ToHex;
 
 use super::Worker;
 
-const JOB_ID: AtomicUsize = AtomicUsize::new(0);
+static JOB_ID: AtomicUsize = AtomicUsize::new(0);
 
 pub fn spawn_worker(hash: H256, target: U256, worker: Box<Worker>, submit_port: u16) {
     spawn(move || {
         let id = JOB_ID.fetch_add(1, Ordering::SeqCst);
+        info!("Starting a new job {}", id);
         if let Some(solution) = work(id, &hash, &target, worker) {
             submit(hash, solution, submit_port);
         }
@@ -42,7 +43,8 @@ pub fn work(id: usize, hash: &H256, target: &U256, mut worker: Box<Worker>) -> O
     for nonce in 0..=u64::max_value() {
         worker.init(hash, nonce, target);
         while !worker.is_finished() {
-            if JOB_ID.load(Ordering::SeqCst) != id {
+            if JOB_ID.load(Ordering::SeqCst) > id + 1 {
+                info!("A new job submitted. Stopping the job {}", id);
                 return None
             }
             match worker.proceed() {
