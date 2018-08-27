@@ -30,6 +30,7 @@ use super::message::Job;
 pub fn run<C: 'static + Config>(config: C) {
     let listen_port = config.listening_port();
     let submit_port = config.submitting_port();
+    let jobs = config.jobs();
     let addr = ([127, 0, 0, 1], listen_port).into();
 
     let server = Server::bind(&addr)
@@ -37,6 +38,7 @@ pub fn run<C: 'static + Config>(config: C) {
         .map_err(|e| error!("server error: {}", e));
     info!("Server started, listening on {:?}", addr);
     info!("It will submit to 127.0.0.1:{}", submit_port);
+    info!("The maximum number of parallel jobs is {}", jobs);
 
     hyper::rt::run(server);
 }
@@ -50,13 +52,14 @@ fn get_work<C: Config>(config: C, req: Request<Body>) -> BoxFut {
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => {
             let submit_port = config.submitting_port();
+            let jobs = config.jobs();
             Box::new(req.into_body().concat2().map(move |chunk| {
                 match serde_json::from_slice::<Job>(&chunk.into_bytes()) {
                     Ok(rpc) => {
                         // FIXME: don't unwrap while parsing incoming job
                         let hash = clean_0x(&rpc.result.0).parse().unwrap();
                         let target = clean_0x(&rpc.result.1).parse().unwrap();
-                        spawn_worker(hash, target, worker, submit_port);
+                        spawn_worker(hash, target, worker, submit_port, jobs);
                         *response.status_mut() = StatusCode::OK;
                     }
                     Err(_) => {
@@ -76,6 +79,7 @@ fn get_work<C: Config>(config: C, req: Request<Body>) -> BoxFut {
 pub trait Config: Copy + Send {
     fn listening_port(&self) -> u16;
     fn submitting_port(&self) -> u16;
+    fn jobs(&self) -> usize;
     fn worker(&self) -> Box<Worker>;
 }
 
