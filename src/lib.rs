@@ -26,7 +26,28 @@ extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 
-mod message;
+mod rpc;
 mod worker;
 
-pub use worker::{run, Config, Worker};
+use std::sync::Arc;
+
+use rpc::{HttpRunner, RpcRunner};
+
+pub use rpc::{HttpConfig, RpcConfig};
+pub use worker::Worker;
+
+pub fn run<C: 'static + Config>(config: C) {
+    let rpc_runner = match config.rpc_config() {
+        RpcConfig::Http(config) => Box::new(HttpRunner::new(&config)) as Box<RpcRunner>,
+    };
+    let jobs = config.jobs();
+    let recruiter = Arc::new(move || config.worker());
+
+    rpc_runner.run(recruiter, jobs);
+}
+
+pub trait Config: Send + Sync {
+    fn rpc_config(&self) -> RpcConfig;
+    fn jobs(&self) -> usize;
+    fn worker(&self) -> Box<Worker>;
+}

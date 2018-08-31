@@ -14,8 +14,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#[derive(Deserialize)]
-pub struct Job {
-    /// (hash, target).
-    pub result: (String, String),
+mod http;
+
+use std::sync::Arc;
+
+use super::worker::Worker;
+
+pub use self::http::{Config as HttpConfig, Runner as HttpRunner};
+
+pub enum RpcConfig {
+    Http(HttpConfig),
+}
+
+pub trait RpcRunner: Send {
+    fn run(&self, Arc<Fn() -> Box<Worker> + Send + Sync>, usize);
 }
