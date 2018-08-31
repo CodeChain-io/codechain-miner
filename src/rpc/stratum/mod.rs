@@ -14,21 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod http;
-mod stratum;
+mod client;
+mod dispatch;
+mod error;
+mod runner;
 
-use std::sync::Arc;
-
-use super::worker::Worker;
-
-pub use self::http::{Config as HttpConfig, Runner as HttpRunner};
-pub use self::stratum::{Config as StratumConfig, Runner as StratumRunner};
-
-pub enum RpcConfig {
-    Http(HttpConfig),
-    Stratum(StratumConfig),
-}
-
-pub trait RpcRunner: Send {
-    fn run(&self, Arc<Fn() -> Box<Worker> + Send + Sync>, usize);
-}
+pub use self::client::Client;
+pub use self::dispatch::{dispatch_fn, Result};
+pub use self::error::Error;
+pub use self::runner::{Config, Runner};

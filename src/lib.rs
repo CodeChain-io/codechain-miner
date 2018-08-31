@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+extern crate bytes;
 extern crate ethereum_types;
+#[macro_use]
 extern crate futures;
 extern crate hyper;
 #[macro_use]
@@ -25,20 +27,23 @@ extern crate serde;
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
+extern crate tokio;
+extern crate tokio_executor;
 
 mod rpc;
 mod worker;
 
 use std::sync::Arc;
 
-use rpc::{HttpRunner, RpcRunner};
+use rpc::{HttpRunner, RpcRunner, StratumRunner};
 
-pub use rpc::{HttpConfig, RpcConfig};
+pub use rpc::{HttpConfig, RpcConfig, StratumConfig};
 pub use worker::Worker;
 
 pub fn run<C: 'static + Config>(config: C) {
     let rpc_runner = match config.rpc_config() {
         RpcConfig::Http(config) => Box::new(HttpRunner::new(&config)) as Box<RpcRunner>,
+        RpcConfig::Stratum(config) => Box::new(StratumRunner::new(&config)) as Box<RpcRunner>,
     };
     let jobs = config.jobs();
     let recruiter = Arc::new(move || config.worker());
