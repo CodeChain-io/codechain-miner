@@ -24,6 +24,7 @@ use super::worker::Worker;
 pub use self::http::{Config as HttpConfig, Runner as HttpRunner};
 pub use self::stratum::{Config as StratumConfig, Runner as StratumRunner};
 
+#[derive(Clone)]
 pub enum RpcConfig {
     Http(HttpConfig),
     Stratum(StratumConfig),
